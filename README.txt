@@ -29,6 +29,8 @@ can be anywhere (C:\SmartDent, D:\AFET, ...).
   restore.bat         Restores the database from a backup.
   install-tasks.bat   Creates the two Task Scheduler tasks for you.
   install-tasks.ps1   Used by install-tasks.bat (do not run directly).
+  install-release.bat Installs a new version from a release zip (section 8).
+  install-release.ps1 Used by install-release.bat (do not run directly).
   run-backend.bat     Used by start-system.bat (do not run directly).
   run-frontend.bat    Used by start-system.bat (do not run directly).
   logs\               Created automatically. Holds the log files.
@@ -220,15 +222,23 @@ can be anywhere (C:\SmartDent, D:\AFET, ...).
  8. UPDATING THE SYSTEM (new version)
 -------------------------------------------------------------------------------
 
-  1. Run backup.bat first.
-  2. Run stop-system.bat (as administrator if started by Task Scheduler).
-  3. Copy in the new files. NEVER overwrite:
-        smartdent-backend\.env
-        smartdent-backend\uploads\
-  4. Build again:
-        smartdent-backend  :  npm install   then  npm run build
-        smartdent-frontend :  pnpm install  then  pnpm build
-  5. Run start-system.bat.
+  New versions come from the supplier as one zip file (SmartDent-<date>.zip).
+  It holds only the built system - no source code - so nothing is built on
+  the server and no internet is needed.
+
+  1. Copy the zip to the server, e.g. C:\SmartDent-2026-10-21_1500.zip
+  2. Open Command Prompt AS ADMINISTRATOR and run:
+
+        C:\Smartdent\server-scripts\install-release.bat "C:\SmartDent-2026-10-21_1500.zip"
+
+  It backs up, stops the system, installs the new version, starts it and
+  checks it answers. Kept automatically: smartdent-backend\.env,
+  license.key, the patient images (uploads) and config.bat.
+  If the new version does not start, the old one is put back and started.
+  On success the old folders are deleted.
+
+  The first time (moving from a git copy with source code to a release), the
+  old folders with the source code are removed this way too.
 
 
 -------------------------------------------------------------------------------
