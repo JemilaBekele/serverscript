@@ -47,15 +47,25 @@ function Invoke-Step([string]$what, [scriptblock]$run) {
 Invoke-Step "Backend" { node (Join-Path $sys "smartdent-backend\scripts\release.mjs") (Join-Path $dir "smartdent-backend") }
 
 # 2. Frontend: the API address is fixed into the build.
+# Built in a separate copy with pnpm's "hoisted" layout: the usual pnpm layout
+# links packages (next, react) into a store, and a zip cannot hold links, so
+# the server would get packages without their dependencies (e.g. @swc/helpers).
+# The developer's own folder and node_modules are left untouched.
 $frontend = Join-Path $sys "smartdent-frontend"
+$feBuild = Join-Path "$env:SystemDrive\sdrel" "fe-$stamp"
+robocopy $frontend $feBuild /E /XD node_modules .next .git e2e test-results playwright-report /XF .env .env.* /NFL /NDL /NJH /NJS /NP | Out-Null
+if ($LASTEXITCODE -ge 8) { throw "Copying the frontend source failed" }
 $env:NEXT_PUBLIC_API_URL = "/api/v1"
 $env:API_PROXY_TARGET = "http://127.0.0.1:$BackendPort"
-Push-Location $frontend
-try { Invoke-Step "Frontend" { pnpm build } } finally { Pop-Location }
+Push-Location $feBuild
+try {
+    Invoke-Step "Frontend packages" { pnpm install --frozen-lockfile --config.node-linker=hoisted }
+    Invoke-Step "Frontend" { pnpm build }
+} finally { Pop-Location }
 
 $feOut = Join-Path $dir "smartdent-frontend"
 New-Item -ItemType Directory -Force (Join-Path $feOut ".next"), (Join-Path $feOut "scripts") | Out-Null
-robocopy (Join-Path $frontend ".next\standalone") (Join-Path $feOut ".next\standalone") /E /NFL /NDL /NJH /NJS /NP | Out-Null
+robocopy (Join-Path $feBuild ".next\standalone") (Join-Path $feOut ".next\standalone") /E /NFL /NDL /NJH /NJS /NP | Out-Null
 if ($LASTEXITCODE -ge 8) { throw "Copying the frontend build failed" }
 Copy-Item (Join-Path $frontend "scripts\start-standalone.mjs") (Join-Path $feOut "scripts")
 # Next.js copies the build machine's .env files into the standalone folder;
@@ -63,6 +73,7 @@ Copy-Item (Join-Path $frontend "scripts\start-standalone.mjs") (Join-Path $feOut
 Get-ChildItem (Join-Path $feOut ".next\standalone") -Force -Recurse -Depth 1 -File -Filter ".env*" |
     Where-Object { $_.FullName -notmatch "\\node_modules\\" } |
     Remove-Item -Force
+Remove-Tree $feBuild
 
 # 3. Server scripts (not this release tool, not the logs or git data)
 Write-Host "`n=== Server scripts ===" -ForegroundColor Cyan
