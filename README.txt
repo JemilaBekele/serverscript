@@ -102,7 +102,8 @@ can be anywhere (C:\SmartDent, D:\AFET, ...).
 
  OPTION A - Automatic (recommended)
    Right-click install-tasks.bat > "Run as administrator".
-   It creates, in Task Scheduler under the folder "AFET Dental":
+   It creates, in Task Scheduler under the folder "SmartDent"
+   (and removes the tasks from the old "AFET Dental" folder, if any):
 
      Start System   runs at Windows start-up (1 minute delay),
                     even if nobody logs in
