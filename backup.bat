@@ -5,11 +5,14 @@
 ::  Database : BACKUP_ROOT\<date_time>\db   (compressed mongodump)
 ::  Images   : BACKUP_ROOT\uploads-mirror    (new and changed files added,
 ::             nothing ever deleted from the copy)
-::  Database backups older than KEEP_DAYS days are removed.
+::  Database backups older than KEEP_DAYS days are removed (KEEP_DAYS=0:
+::  none are ever removed).
 ::  Run hidden through RunBackup.vbs (Task Scheduler) or double-click this.
 :: ============================================================================
 call "%~dp0config.bat"
 set "LOG=%LOG_DIR%\backup.log"
+:: Keep the log under about 10 MB (it grows every hour).
+for %%F in ("%LOG%") do if %%~zF GTR 10485760 move /y "%LOG%" "%LOG%.old" >nul
 
 for /f %%d in ('powershell -NoProfile -Command "Get-Date -Format yyyy-MM-dd_HHmm"') do set "STAMP=%%d"
 set "TARGET=%BACKUP_ROOT%\%STAMP%"
@@ -42,8 +45,10 @@ if not errorlevel 8 echo [%date% %time%] Images copied >> "%LOG%"
 
 :prune
 
-:: Remove old dated backups; the uploads mirror is kept.
+:: Remove old dated backups; the uploads mirror is kept. KEEP_DAYS=0 keeps all.
+if "%KEEP_DAYS%"=="0" goto done
 forfiles /p "%BACKUP_ROOT%" /d -%KEEP_DAYS% /c "cmd /c if @isdir==TRUE if /i not @file==\"uploads-mirror\" rd /s /q @path" >nul 2>&1
 
+:done
 echo [%date% %time%] Backup finished >> "%LOG%"
 exit /b 0

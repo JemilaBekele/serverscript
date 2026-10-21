@@ -15,7 +15,8 @@ if not defined FRONTEND_PORT set "FRONTEND_PORT=3090"
 if not defined BACKUP_ROOT set "BACKUP_ROOT=C:\AFET-Backups"
 
 :: Delete database backups older than this many days.
-if not defined KEEP_DAYS set "KEEP_DAYS=30"
+:: 0 = never delete: every backup is kept (watch the free disk space).
+if not defined KEEP_DAYS set "KEEP_DAYS=0"
 
 :: MongoDB Database Tools (mongodump / mongorestore).
 if not defined MONGO_TOOLS set "MONGO_TOOLS=C:\Program Files\MongoDB\Tools\100\bin"

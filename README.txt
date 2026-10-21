@@ -76,7 +76,8 @@ can be anywhere (C:\SmartDent, D:\AFET, ...).
 
        BACKUP_ROOT    where backups go (default C:\AFET-Backups).
                       Better: a second drive or an external disk, e.g. D:\AFET-Backups
-       KEEP_DAYS      how many days of database backups to keep (default 30)
+       KEEP_DAYS      how many days of database backups to keep
+                      (default 0 = keep every backup, never delete)
        FRONTEND_PORT  website port (default 3090)
 
  Step 6 - Test by hand
@@ -97,7 +98,7 @@ can be anywhere (C:\SmartDent, D:\AFET, ...).
 
 
 -------------------------------------------------------------------------------
- 3. TASK SCHEDULER (start automatically + daily backup)
+ 3. TASK SCHEDULER (start automatically + hourly backup)
 -------------------------------------------------------------------------------
 
  OPTION A - Automatic (recommended)
@@ -107,11 +108,12 @@ can be anywhere (C:\SmartDent, D:\AFET, ...).
 
      Start System   runs at Windows start-up (1 minute delay),
                     even if nobody logs in
-     Daily Backup   runs every day at 21:00; if the PC was off at 21:00,
+     Backup         runs every hour, on the hour; if the PC was off,
                     it runs at the next start-up
 
-   To use another backup time, run in PowerShell as administrator:
-       .\install-tasks.ps1 -BackupTime "13:00"
+   To back up less often (e.g. every 4 hours), run in PowerShell as
+   administrator:
+       .\install-tasks.ps1 -BackupEveryHours 4
 
  OPTION B - By hand
    Open Task Scheduler > Create Task...
@@ -126,9 +128,10 @@ can be anywhere (C:\SmartDent, D:\AFET, ...).
                 Add arguments  : "<system folder>\server-scripts\RunServer.vbs"
      Settings : untick "Stop the task if it runs longer than"
 
-   Task 2: "AFET Daily Backup"
+   Task 2: "AFET Backup"
      General  : same as Task 1
-     Triggers : New > Daily, at 21:00
+     Triggers : New > One time, at 00:00 today; tick "Repeat task every:
+                1 hour" for a duration of: Indefinitely
      Actions  : Program/script : wscript.exe
                 Add arguments  : "<system folder>\server-scripts\RunBackup.vbs"
      Settings : tick "Run task as soon as possible after a scheduled start
@@ -175,10 +178,13 @@ can be anywhere (C:\SmartDent, D:\AFET, ...).
 
   Each backup creates:
 
-    <BACKUP_ROOT>\2026-10-21_2100\db\   database, compressed (one folder per run)
+    <BACKUP_ROOT>\2026-10-21_1400\db\   database, compressed (one folder per
+                                       run, so one per hour)
     <BACKUP_ROOT>\uploads-mirror\       patient images (X-rays, photos)
 
-  - Database backups older than KEEP_DAYS are deleted automatically.
+  - With KEEP_DAYS=0 (the default) no backup is ever deleted. Check the free
+    space on the backup drive once a month: 24 backups are added every day.
+    To delete old ones automatically, set KEEP_DAYS in config.bat (e.g. 90).
   - uploads-mirror only receives new and changed images. Nothing is ever
     deleted from it, so an image deleted by mistake can still be found there.
   - Backup by hand any time: double-click backup.bat.
