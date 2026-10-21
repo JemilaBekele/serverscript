@@ -1,0 +1,8 @@
+# Windows scripts must keep Windows (CRLF) line endings, whatever the Git
+# settings of whoever clones this. With LF endings, cmd.exe can misread
+# labels and "goto" in .bat files.
+*.bat  text eol=crlf
+*.cmd  text eol=crlf
+*.vbs  text eol=crlf
+*.ps1  text eol=crlf
+*.txt  text eol=crlf
