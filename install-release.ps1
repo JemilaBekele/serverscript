@@ -73,7 +73,28 @@ function Move-Kept([string]$from, [string]$to, [string[]]$items) {
 
 function Stop-System {
     cmd /c "`"$here\stop-system.bat`"" | Out-Null
-    Start-Sleep -Seconds 5
+    # The keep-alive loops (run-backend.bat / run-frontend.bat) only notice the
+    # STOP flag within 10 s, and while they run their working folder cannot be
+    # renamed. End them now.
+    Get-CimInstance Win32_Process -Filter "Name='cmd.exe'" |
+        Where-Object { $_.CommandLine -match "run-(backend|frontend)\.bat" } |
+        ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+    Start-Sleep -Seconds 3
+}
+
+# Renames a folder, retrying for 30 s while something still has it open.
+function Rename-Folder([string]$path, [string]$newPath) {
+    for ($i = 1; ; $i++) {
+        try {
+            Rename-Item $path (Split-Path -Leaf $newPath)
+            return
+        } catch {
+            if ($i -ge 10) {
+                throw "$path is still in use. Close every Command Prompt, VS Code or File Explorer window open in that folder, then run the install again."
+            }
+            Start-Sleep -Seconds 3
+        }
+    }
 }
 
 function Start-System {
@@ -128,9 +149,9 @@ $kept = Get-KeptItems $backend
 $swapped = $false
 try {
     Say "Installing the new version ..."
-    Rename-Item $backend $oldBackend
+    Rename-Folder $backend $oldBackend
     $swapped = $true
-    if (Test-Path $frontend) { Rename-Item $frontend $oldFrontend }
+    if (Test-Path $frontend) { Rename-Folder $frontend $oldFrontend }
     Copy-Tree (Join-Path $src "smartdent-backend") $backend
     Copy-Tree (Join-Path $src "smartdent-frontend") $frontend
     Move-Kept $oldBackend $backend $kept
@@ -152,7 +173,9 @@ try {
         }
     }
     Start-System
-    throw
+    if ($src -ne $Package) { Remove-Tree $src }
+    Say "Nothing was changed: the previous version is running again." Yellow
+    exit 1
 }
 
 # Register the (possibly updated) Task Scheduler tasks.
