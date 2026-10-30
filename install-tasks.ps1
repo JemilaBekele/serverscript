@@ -125,10 +125,6 @@ try {
 # lists the task (or the other way round), Register-ScheduledTask fails with
 # "The system cannot find the path specified" (0x80070003). Remove such broken
 # leftovers of our tasks, so they can be registered again.
-if ((Test-Path "$cache\Tree\SmartDent") -and -not (Test-Path $taskDir)) {
-    New-Item -ItemType Directory -Force $taskDir | Out-Null
-    Log "Repaired:   put back the missing folder $taskDir"
-}
 foreach ($name in "Start System", "Backup", "Daily Backup") {
     $tree = "$cache\Tree\SmartDent\$name"
     $file = Join-Path $taskDir $name
@@ -152,6 +148,37 @@ foreach ($name in "Start System", "Backup", "Daily Backup") {
         Log "Could not repair \SmartDent\$name. Delete it in Task Scheduler, then run this again (see $log)." Yellow
         Detail-Error $_
     }
+}
+
+# A \SmartDent\ folder that holds no task yet refuses new ones ("Access is
+# denied") is broken, e.g. made by hand under System32\Tasks. Delete it through
+# Task Scheduler itself (and any folder left on disk), so registering below
+# creates it afresh.
+try {
+    $ours = @(Get-ScheduledTask -TaskPath "\SmartDent\" -ErrorAction SilentlyContinue)
+    if (-not $ours) {
+        $broken = $false
+        try {
+            Register-ScheduledTask -TaskPath "\SmartDent\" -TaskName "SmartDent-Probe" -Force `
+                -Action (New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c exit") -ErrorAction Stop | Out-Null
+            Unregister-ScheduledTask -TaskPath "\SmartDent\" -TaskName "SmartDent-Probe" -Confirm:$false -ErrorAction Stop
+        } catch {
+            $broken = $true
+            Detail "probe task in \SmartDent\ failed before repair:"
+            Detail-Error $_
+        }
+        if ($broken) {
+            $scheduler = New-Object -ComObject Schedule.Service
+            $scheduler.Connect()
+            try { $scheduler.GetFolder("\").DeleteFolder("SmartDent", 0) } catch { Detail "DeleteFolder: $($_.Exception.Message.Trim())" }
+            if (Test-Path -LiteralPath $taskDir) { Remove-Item -LiteralPath $taskDir -Recurse -Force }
+            try { $scheduler.GetFolder("\").DeleteFolder("SmartDent", 0) } catch { }
+            Log "Repaired:   deleted the broken \SmartDent\ folder in Task Scheduler"
+        }
+    }
+} catch {
+    Log "Could not repair the \SmartDent\ folder (see $log)" Yellow
+    Detail-Error $_
 }
 
 # Registers one task; on failure logs the full error and returns $false.
