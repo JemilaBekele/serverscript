@@ -27,7 +27,9 @@ can be anywhere (default C:\smartdent\Branch-smartdent).
   backup.bat          Backs up the database and the patient images.
   RunBackup.vbs       Runs backup.bat with no window (for Task Scheduler).
   restore.bat         Restores the database from a backup.
-  install-tasks.bat   Creates the two Task Scheduler tasks for you.
+  install-tasks.bat   Creates the two Task Scheduler tasks for you, and keeps
+                      the PC awake while plugged in (no sleep, lid does nothing)
+                      so other branches can always reach it.
   install-tasks.ps1   Used by install-tasks.bat (do not run directly).
   install-release.bat Installs a new version from a release zip (section 8).
   install-release.ps1 Used by install-release.bat (do not run directly).
