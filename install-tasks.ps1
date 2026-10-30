@@ -19,6 +19,15 @@ Get-ScheduledTask -TaskPath "\AFET Dental\" -ErrorAction SilentlyContinue |
 Get-ScheduledTask -TaskPath "\SmartDent\" -TaskName "Daily Backup" -ErrorAction SilentlyContinue |
     Unregister-ScheduledTask -Confirm:$false
 
+# A "SmartDent" folder that Task Scheduler still lists but whose folder under
+# System32\Tasks was deleted makes Register-ScheduledTask fail with "The system
+# cannot find the path specified" (0x80070003). Put the folder back.
+$taskDir = Join-Path $env:windir "System32\Tasks\SmartDent"
+if ((Test-Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree\SmartDent") -and
+    -not (Test-Path $taskDir)) {
+    New-Item -ItemType Directory -Force $taskDir | Out-Null
+}
+
 $startTrigger = New-ScheduledTaskTrigger -AtStartup
 $startTrigger.Delay = "PT1M"   # give the network and MongoDB a minute to come up
 Register-ScheduledTask -TaskPath "\SmartDent\" -TaskName "Start System" -Force `

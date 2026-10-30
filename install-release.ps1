@@ -178,8 +178,14 @@ try {
     exit 1
 }
 
-# Register the (possibly updated) Task Scheduler tasks.
-& (Join-Path $here "install-tasks.ps1")
+# Register the (possibly updated) Task Scheduler tasks. A failure here must not
+# leave the system stopped: the new version is already in place.
+try {
+    & (Join-Path $here "install-tasks.ps1")
+} catch {
+    Say "Could not register the Task Scheduler tasks: $($_.Exception.Message)" Yellow
+    Say "The update continues. Afterwards, run install-tasks.bat as administrator." Yellow
+}
 
 # ── 4. Start and check ────────────────────────────────────────────────────────
 Say "Starting the system and waiting for it to answer ..."
