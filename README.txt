@@ -1,9 +1,9 @@
 ===============================================================================
-  AFET DENTAL CARE - SERVER SCRIPTS GUIDE
+  drlemlem - SERVER SCRIPTS GUIDE
   Start, stop, back up and restore the system on the server PC
 ===============================================================================
 
-This folder holds the scripts that run AFET Dental Care on the server PC.
+This folder holds the scripts that run drlemlem on the server PC.
 It must sit next to the two system folders, like this:
 
     <system folder>\
@@ -12,7 +12,7 @@ It must sit next to the two system folders, like this:
         server-scripts\         (this folder)
 
 The scripts find everything from their own location, so the system folder
-can be anywhere (C:\SmartDent, D:\AFET, ...).
+can be anywhere (default C:\smartdent\Branch-smartdent).
 
 
 -------------------------------------------------------------------------------
@@ -76,8 +76,8 @@ can be anywhere (C:\SmartDent, D:\AFET, ...).
  Step 5 - Check config.bat
    Open config.bat in Notepad. Usually you only change:
 
-       BACKUP_ROOT    where backups go (default C:\AFET-Backups).
-                      Better: a second drive or an external disk, e.g. D:\AFET-Backups
+       BACKUP_ROOT    where backups go (default C:\drlemlem-Backups).
+                      Better: a second drive or an external disk, e.g. D:\drlemlem-Backups
        KEEP_DAYS      how many days of database backups to keep
                       (default 0 = keep every backup, never delete)
        FRONTEND_PORT  website port (default 3090)
@@ -92,7 +92,7 @@ can be anywhere (C:\SmartDent, D:\AFET, ...).
    b) Open PowerShell AS ADMINISTRATOR and run:
 
         Set-NetConnectionProfile -NetworkCategory Private
-        New-NetFirewallRule -DisplayName "AFET Dental" -Direction Inbound -Protocol TCP -LocalPort 3090 -Action Allow -Profile Private
+        New-NetFirewallRule -DisplayName "drlemlem" -Direction Inbound -Protocol TCP -LocalPort 3090 -Action Allow -Profile Private
 
    c) On the other computers open:  http://<server-ip>:3090
       Example: http://192.168.0.142:3090
@@ -120,7 +120,7 @@ can be anywhere (C:\SmartDent, D:\AFET, ...).
  OPTION B - By hand
    Open Task Scheduler > Create Task...
 
-   Task 1: "AFET Start System"
+   Task 1: "drlemlem Start System"
      General  : "Run whether user is logged on or not"
                 tick "Run with highest privileges"
      Triggers : New > Begin the task: "At startup"
@@ -130,7 +130,7 @@ can be anywhere (C:\SmartDent, D:\AFET, ...).
                 Add arguments  : "<system folder>\server-scripts\RunServer.vbs"
      Settings : untick "Stop the task if it runs longer than"
 
-   Task 2: "AFET Backup"
+   Task 2: "drlemlem Backup"
      General  : same as Task 1
      Triggers : New > One time, at 00:00 today; tick "Repeat task every:
                 1 hour" for a duration of: Indefinitely

@@ -1,6 +1,6 @@
 @echo off
 :: ============================================================================
-::  AFET Dental Care - back up the database and the patient images.
+::  drlemlem - back up the database and the patient images.
 ::
 ::  Database : BACKUP_ROOT\<date_time>\db   (compressed mongodump)
 ::  Images   : BACKUP_ROOT\uploads-mirror    (new and changed files added,

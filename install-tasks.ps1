@@ -1,4 +1,4 @@
-# AFET Dental Care - register the Task Scheduler tasks.
+# drlemlem - register the Task Scheduler tasks.
 # Run once, as Administrator:  right-click install-tasks.bat > Run as administrator
 #
 #   "SmartDent\Start System" - at Windows start-up (no login needed), runs RunServer.vbs

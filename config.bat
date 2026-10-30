@@ -1,18 +1,20 @@
 @echo off
 :: ============================================================================
-::  AFET Dental Care - shared settings for all server scripts.
+::  drlemlem - shared settings for all server scripts.
 ::  Edit the values in this block only. Every other script reads them.
 :: ============================================================================
 
 :: Folder that holds smartdent-backend and smartdent-frontend
-:: (default: the folder above this server-scripts folder).
+:: (default: C:\smartdent\Branch-smartdent; if that folder does not exist,
+:: the folder above this server-scripts folder).
+if not defined SYSTEM_DIR if exist "C:\smartdent\Branch-smartdent\smartdent-backend" set "SYSTEM_DIR=C:\smartdent\Branch-smartdent"
 if not defined SYSTEM_DIR for %%I in ("%~dp0..") do set "SYSTEM_DIR=%%~fI"
 
 :: Port staff open in the browser: http://<this-pc-ip>:3090
 if not defined FRONTEND_PORT set "FRONTEND_PORT=3090"
 
 :: Where backups go. A second drive or external disk is safer than C:.
-if not defined BACKUP_ROOT set "BACKUP_ROOT=C:\AFET-Backups"
+if not defined BACKUP_ROOT set "BACKUP_ROOT=C:\drlemlem-Backups"
 
 :: Delete database backups older than this many days.
 :: 0 = never delete: every backup is kept (watch the free disk space).

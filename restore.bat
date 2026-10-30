@@ -1,6 +1,6 @@
 @echo off
 :: ============================================================================
-::  AFET Dental Care - restore the database from a backup.
+::  drlemlem - restore the database from a backup.
 ::
 ::  restore.bat                       restores the newest backup
 ::  restore.bat 2026-10-21_2100       restores that backup folder
