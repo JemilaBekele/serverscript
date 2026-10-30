@@ -43,13 +43,38 @@ Get-ScheduledTask -TaskPath "\AFET Dental\" -ErrorAction SilentlyContinue |
 Get-ScheduledTask -TaskPath "\SmartDent\" -TaskName "Daily Backup" -ErrorAction SilentlyContinue |
     Unregister-ScheduledTask -Confirm:$false
 
-# A "SmartDent" folder that Task Scheduler still lists but whose folder under
-# System32\Tasks was deleted makes Register-ScheduledTask fail with "The system
-# cannot find the path specified" (0x80070003). Put the folder back.
+# Task Scheduler keeps each task twice: in the registry (TaskCache) and as a
+# file under System32\Tasks. When the files were deleted but the registry still
+# lists the task (or the other way round), Register-ScheduledTask fails with
+# "The system cannot find the path specified" (0x80070003). Remove such broken
+# leftovers of our tasks, so they can be registered again.
+$cache = "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache"
 $taskDir = Join-Path $env:windir "System32\Tasks\SmartDent"
-if ((Test-Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Schedule\TaskCache\Tree\SmartDent") -and
-    -not (Test-Path $taskDir)) {
+if ((Test-Path "$cache\Tree\SmartDent") -and -not (Test-Path $taskDir)) {
     New-Item -ItemType Directory -Force $taskDir | Out-Null
+}
+foreach ($name in "Start System", "Backup", "Daily Backup") {
+    $tree = "$cache\Tree\SmartDent\$name"
+    $file = Join-Path $taskDir $name
+    $inRegistry = Test-Path -LiteralPath $tree
+    $onDisk = Test-Path -LiteralPath $file
+    try {
+        if ($inRegistry -and -not $onDisk) {
+            $id = (Get-ItemProperty -LiteralPath $tree).Id
+            Remove-Item -LiteralPath $tree -Recurse -Force
+            if ($id) {
+                foreach ($kind in "Tasks", "Boot", "Logon", "Plain", "Maintenance") {
+                    Remove-Item -LiteralPath "$cache\$kind\$id" -Recurse -Force -ErrorAction SilentlyContinue
+                }
+            }
+            Write-Host "Repaired:   removed the broken registry entry of \SmartDent\$name"
+        } elseif ($onDisk -and -not $inRegistry) {
+            Remove-Item -LiteralPath $file -Force
+            Write-Host "Repaired:   removed the leftover file of \SmartDent\$name"
+        }
+    } catch {
+        Write-Host "Could not repair \SmartDent\$name ($($_.Exception.Message)). Delete it in Task Scheduler, then run this again." -ForegroundColor Yellow
+    }
 }
 
 $startTrigger = New-ScheduledTaskTrigger -AtStartup
